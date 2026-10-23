@@ -201,7 +201,7 @@ class HealthResponse(BaseModel):
     status: str
     llm_provider: str
     llm_configured: bool
-    gemini_model: str
+    groq_model: str
     embedding_model: str
     embedding_loaded: bool
     database_ok: bool

@@ -1,0 +1,12 @@
+# Exclude local dev artifacts
+backend/data/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/tests/
+backend/eval/
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+.env
+.env.local
+

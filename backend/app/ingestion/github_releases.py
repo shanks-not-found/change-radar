@@ -10,7 +10,7 @@ Fetches GitHub releases via the GitHub REST API with:
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import httpx
 from packaging.version import parse as parse_version
 

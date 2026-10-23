@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     )
 
     # LLM Settings
-    llm_provider: str = Field(default="gemini", alias="LLM_PROVIDER")
-    gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    llm_provider: str = Field(default="groq", alias="LLM_PROVIDER")
+    groq_api_key: Optional[str] = Field(default=None, alias="GROQ_API_KEY")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
     github_token: Optional[str] = Field(default=None, alias="GITHUB_TOKEN")
 
     # Embeddings & RAG
@@ -47,19 +47,19 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-def get_effective_gemini_key() -> Optional[str]:
-    """Dynamically reads the Gemini API key from settings, env, or disk .env files."""
-    if settings.gemini_api_key:
-        return settings.gemini_api_key
+def get_effective_groq_key() -> Optional[str]:
+    """Dynamically reads the Groq API key from settings, env, or disk .env files."""
+    if settings.groq_api_key:
+        return settings.groq_api_key
     import os
-    if os.environ.get("GEMINI_API_KEY"):
-        return os.environ.get("GEMINI_API_KEY")
+    if os.environ.get("GROQ_API_KEY"):
+        return os.environ.get("GROQ_API_KEY")
     for env_path in (BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env"):
         if env_path.exists():
             try:
                 for line in env_path.read_text(encoding="utf-8").splitlines():
                     line = line.strip()
-                    if line.startswith("GEMINI_API_KEY=") and not line.startswith("#"):
+                    if line.startswith("GROQ_API_KEY=") and not line.startswith("#"):
                         val = line.split("=", 1)[1].strip().strip('"').strip("'")
                         if val:
                             return val
@@ -68,11 +68,11 @@ def get_effective_gemini_key() -> Optional[str]:
     return None
 
 def get_effective_llm_provider() -> str:
-    """Returns 'gemini' if key is present or provider configured as gemini, else 'mock'."""
-    key = get_effective_gemini_key()
+    """Returns 'groq' if key is present or provider configured as groq, else 'mock'."""
+    key = get_effective_groq_key()
     if key:
-        return "gemini"
-    p = (settings.llm_provider or "gemini").lower().strip()
+        return "groq"
+    p = (settings.llm_provider or "groq").lower().strip()
     return p
 
 # Ensure data directories exist

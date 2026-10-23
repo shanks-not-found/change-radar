@@ -9,7 +9,10 @@ import {
   AskResponse,
 } from "../types";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
+// In production (Vercel), VITE_API_URL should be set to "" (empty string) so
+// all /api/* requests go to the same origin — Vercel rewrites them to the backend service.
+// In local dev, leave VITE_API_URL=http://localhost:8000 in your .env file.
+const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;

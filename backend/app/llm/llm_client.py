@@ -3,7 +3,7 @@ LLM Client Module for StackSignal.
 
 Isolates all LLM logic, provider abstraction, API key handling,
 retries with exponential backoff, and post-validation checks.
-Supported providers: 'gemini' (default) and 'mock' (offline demo mode).
+Supported providers: 'groq' (default) and 'mock' (offline demo mode).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from app.config import settings, get_effective_gemini_key, get_effective_llm_provider
+from app.config import settings, get_effective_groq_key, get_effective_llm_provider
 from app.schemas import (
     ImpactContext,
     ImpactFinding,
@@ -136,38 +136,37 @@ class LLMProvider(ABC):
 
 
 # ------------------------------------------------------------------------------
-# Google Gemini Provider
+# Groq Provider
 # ------------------------------------------------------------------------------
 
-class GeminiProvider(LLMProvider):
+class GroqProvider(LLMProvider):
     def __init__(self) -> None:
-        api_key = get_effective_gemini_key()
+        api_key = get_effective_groq_key()
         if not api_key:
             logger.warning(
-                "GEMINI_API_KEY is not configured. Live calls will fail. Use LLM_PROVIDER=mock for demo/offline mode."
+                "GROQ_API_KEY is not configured. Live calls will fail. Use LLM_PROVIDER=mock for demo/offline mode."
             )
         self.api_key = api_key
-        self.model_name = settings.gemini_model or "gemini-2.5-flash"
+        self.model_name = settings.groq_model or "llama-3.3-70b-versatile"
         self._llm = None
 
     def get_chat_model(self) -> Any:
         if self._llm is None:
             try:
-                from langchain_google_genai import ChatGoogleGenerativeAI
+                from langchain_groq import ChatGroq
             except ImportError:
                 raise RuntimeError(
-                    "langchain_google_genai is not installed. Please run pip install langchain-google-genai."
+                    "langchain_groq is not installed. Please run pip install langchain-groq."
                 )
-            api_key = self.api_key or get_effective_gemini_key()
+            api_key = self.api_key or get_effective_groq_key()
             if not api_key:
-                raise ValueError("GEMINI_API_KEY is missing. Configure it in .env or switch to LLM_PROVIDER=mock.")
+                raise ValueError("GROQ_API_KEY is missing. Configure it in .env or switch to LLM_PROVIDER=mock.")
 
-            self._llm = ChatGoogleGenerativeAI(
+            self._llm = ChatGroq(
                 model=self.model_name,
-                google_api_key=api_key,
+                groq_api_key=api_key,
                 temperature=0.1,
                 max_retries=3,
-                timeout=60,
             )
         return self._llm
 
@@ -180,9 +179,9 @@ class GeminiProvider(LLMProvider):
             except Exception as e:
                 last_exc = e
                 err_msg = str(e).lower()
-                # Fast exit for auth or suspension errors (don't waste time retrying)
-                if any(k in err_msg for k in ["permission_denied", "403", "suspended", "api_key_invalid"]):
-                    logger.error(f"Gemini API authentication/permission error: {e}")
+                # Fast exit for auth errors (don't waste time retrying)
+                if any(k in err_msg for k in ["permission_denied", "403", "invalid_api_key", "unauthorized"]):
+                    logger.error(f"Groq API authentication error: {e}")
                     raise e
                 logger.warning(f"LLM call attempt {attempt}/{max_attempts} failed: {e}. Retrying in {delay}s...")
                 time.sleep(delay)
@@ -206,10 +205,10 @@ class GeminiProvider(LLMProvider):
             raw_finding: ImpactFinding = self._execute_with_retry(_call)
             return post_validate_impact_finding(raw_finding, context)
         except Exception as e:
-            logger.error(f"Gemini analyze_change_impact failed ({e}). Falling back to deterministic offline provider.")
+            logger.error(f"Groq analyze_change_impact failed ({e}). Falling back to deterministic offline provider.")
             fallback_finding = MockLLMProvider().analyze_change_impact(context)
             fallback_finding.uncertainty_notes = (
-                f"[Fallback Mode: Live Gemini call encountered: {type(e).__name__}. "
+                f"[Fallback Mode: Live Groq call encountered: {type(e).__name__}. "
                 "Generated using deterministic offline RAG analysis.]"
             )
             return fallback_finding
@@ -245,10 +244,10 @@ class GeminiProvider(LLMProvider):
 
             return self._execute_with_retry(_call)
         except Exception as e:
-            logger.error(f"Gemini answer_question failed ({e}). Falling back to deterministic offline answer.")
+            logger.error(f"Groq answer_question failed ({e}). Falling back to deterministic offline answer.")
             fallback_ans = MockLLMProvider().answer_question(question, evidence, project_context)
             fallback_ans.caveats = (
-                f"[Fallback Mode: Live Gemini call encountered: {type(e).__name__}. "
+                f"[Fallback Mode: Live Groq call encountered: {type(e).__name__}. "
                 "Synthesized from local evidence chunks.]"
             )
             return fallback_ans
@@ -448,20 +447,20 @@ class MockLLMProvider(LLMProvider):
 # ------------------------------------------------------------------------------
 
 def get_provider() -> LLMProvider:
-    api_key = get_effective_gemini_key()
-    provider_name = (settings.llm_provider or "gemini").lower().strip()
+    api_key = get_effective_groq_key()
+    provider_name = (settings.llm_provider or "groq").lower().strip()
     
-    # If a Gemini API key is provided, automatically activate Gemini provider
+    # If a Groq API key is provided, automatically activate Groq provider
     if api_key:
-        return GeminiProvider()
+        return GroqProvider()
 
     if provider_name == "mock":
         return MockLLMProvider()
-    elif provider_name == "gemini":
+    elif provider_name == "groq":
         if not api_key:
-            logger.info("GEMINI_API_KEY is not set. Defaulting to MockLLMProvider for offline execution.")
+            logger.info("GROQ_API_KEY is not set. Defaulting to MockLLMProvider for offline execution.")
             return MockLLMProvider()
-        return GeminiProvider()
+        return GroqProvider()
     else:
         logger.warning(f"Unknown provider '{provider_name}'. Falling back to MockLLMProvider.")
         return MockLLMProvider()

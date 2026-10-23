@@ -5,7 +5,7 @@ Checks and reports system readiness:
 - Database connectivity
 - ChromaDB vector store readiness
 - Embedding model availability
-- LLM provider status (live Gemini vs mock mode)
+- LLM provider status (live Groq vs mock mode)
 """
 
 import os
@@ -47,17 +47,17 @@ def health_check() -> HealthResponse:
         embedding_loaded = False
 
     # 4. Check LLM Provider
-    from app.config import get_effective_gemini_key
-    gemini_key = get_effective_gemini_key()
-    has_gemini_key = bool(gemini_key)
-    active_provider = "gemini" if has_gemini_key else settings.llm_provider.lower().strip()
-    llm_configured = True if active_provider == "mock" else has_gemini_key
+    from app.config import get_effective_groq_key
+    groq_key = get_effective_groq_key()
+    has_groq_key = bool(groq_key)
+    active_provider = "groq" if has_groq_key else settings.llm_provider.lower().strip()
+    llm_configured = True if active_provider == "mock" else has_groq_key
 
     return HealthResponse(
         status="ok" if db_ok else "degraded",
         llm_provider=active_provider,
         llm_configured=llm_configured,
-        gemini_model=settings.gemini_model,
+        groq_model=settings.groq_model,
         embedding_model=settings.embedding_model,
         embedding_loaded=embedding_loaded,
         database_ok=db_ok,
