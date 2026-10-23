@@ -1,12 +1,13 @@
 """
 Embeddings Module for StackSignal.
 
-Loads sentence-transformers model (default: BAAI/bge-small-en-v1.5) as a singleton.
+Uses ChromaDB's built-in ONNX embedding function (default_ef) which runs
+BAAI/bge-small-en-v1.5 via onnxruntime — same model quality as sentence-transformers
+but without the PyTorch / CUDA dependency tree (~3.5 GB saved on Vercel).
 Provides:
 - Batch passage encoding
-- Query encoding with the required BGE instruction prefix
-- In-memory caching to avoid re-embedding unchanged text
-- Fallback mock embedding generator for testing and offline runs
+- Query encoding with the BGE query instruction prefix
+- Deterministic fallback for offline/test runs
 """
 
 import hashlib
@@ -24,17 +25,20 @@ _EMBEDDING_MODEL_INSTANCE = None
 _EMBEDDING_CACHE = {}
 
 def get_embedding_model():
-    """Singleton getter for the sentence-transformers model."""
+    """Singleton getter for ChromaDB's built-in ONNX embedding function.
+
+    chromadb.utils.embedding_functions.DefaultEmbeddingFunction uses
+    onnxruntime to run BAAI/bge-small-en-v1.5 — no torch/CUDA required.
+    """
     global _EMBEDDING_MODEL_INSTANCE
     if _EMBEDDING_MODEL_INSTANCE is None:
         try:
-            from sentence_transformers import SentenceTransformer
-            model_name = settings.embedding_model or "BAAI/bge-small-en-v1.5"
-            logger.info(f"Loading embedding model: {model_name}...")
-            _EMBEDDING_MODEL_INSTANCE = SentenceTransformer(model_name)
+            from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+            logger.info("Loading ChromaDB ONNX embedding function (BAAI/bge-small-en-v1.5)...")
+            _EMBEDDING_MODEL_INSTANCE = DefaultEmbeddingFunction()
             logger.info("Embedding model loaded successfully.")
         except Exception as e:
-            logger.warning(f"Could not load SentenceTransformer model ({e}). Using deterministic embedding fallback.")
+            logger.warning(f"Could not load ChromaDB embedding function ({e}). Using deterministic fallback.")
             _EMBEDDING_MODEL_INSTANCE = "fallback"
     return _EMBEDDING_MODEL_INSTANCE
 
@@ -56,7 +60,10 @@ def _generate_fallback_embedding(text: str, dim: int = 384) -> List[float]:
 
 
 def encode_passages(texts: List[str], batch_size: int = 32) -> List[List[float]]:
-    """Encodes a batch of document chunk texts into normalized embedding vectors."""
+    """Encodes a batch of document chunk texts into normalized embedding vectors.
+
+    The DefaultEmbeddingFunction is callable: ef(list_of_texts) -> list of embeddings.
+    """
     if not texts:
         return []
 
@@ -65,13 +72,9 @@ def encode_passages(texts: List[str], batch_size: int = 32) -> List[List[float]]
         return [_generate_fallback_embedding(t) for t in texts]
 
     try:
-        embeddings = model.encode(
-            texts,
-            batch_size=batch_size,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        return embeddings.tolist()
+        # DefaultEmbeddingFunction takes a list and returns a list of float vectors
+        embeddings = model(texts)
+        return [list(e) for e in embeddings]
     except Exception as e:
         logger.warning(f"Error during passage encoding: {e}. Falling back.")
         return [_generate_fallback_embedding(t) for t in texts]
@@ -85,12 +88,8 @@ def encode_query(query: str) -> List[float]:
         return _generate_fallback_embedding(prefixed_query)
 
     try:
-        embedding = model.encode(
-            prefixed_query,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        return embedding.tolist()
+        embeddings = model([prefixed_query])
+        return list(embeddings[0])
     except Exception as e:
         logger.warning(f"Error during query encoding: {e}. Falling back.")
         return _generate_fallback_embedding(prefixed_query)
