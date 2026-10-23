@@ -9,10 +9,15 @@ import {
   AskResponse,
 } from "../types";
 
-// In production (Vercel), VITE_API_URL should be set to "" (empty string) so
-// all /api/* requests go to the same origin — Vercel rewrites them to the backend service.
-// In local dev, leave VITE_API_URL=http://localhost:8000 in your .env file.
-const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+// Resolves API base: uses VITE_API_URL if defined, defaults to http://localhost:8000 in dev,
+// and "" (same-origin relative URL) in production so Cloudflare Pages _redirects proxies /api/*
+const API_BASE = (
+  import.meta.env.VITE_API_URL !== undefined
+    ? import.meta.env.VITE_API_URL
+    : import.meta.env.DEV
+    ? "http://localhost:8000"
+    : ""
+).replace(/\/$/, "");
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;

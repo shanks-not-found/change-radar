@@ -1,7 +1,28 @@
-# Terminal 1 - Backend
+# =======================================================
+# Change Radar / StackSignal - Run & Deploy Commands
+# =======================================================
+
+# 1. Local Development (Terminal 1 - Backend)
 cd "d:\github\change radar\backend"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Terminal 2 - Frontend
+# 2. Local Development (Terminal 2 - Frontend)
 cd "d:\github\change radar\frontend"
 npm run dev
+
+# 3. Cloudflare Tunnel (Bridges Local Backend to Cloudflare)
+# Exposes http://localhost:8000 securely with a public HTTPS URL
+npx --yes cloudflared tunnel --url http://localhost:8000
+
+# 4. Cloudflare Wrangler (CLI Login & Deployment)
+# Login to Cloudflare account in browser
+npx wrangler login
+
+# Deploy Frontend build directly to Cloudflare Pages
+cd "d:\github\change radar"
+npx wrangler pages deploy frontend/dist --project-name change-radar
+
+# 5. Git Push to GitHub (Triggers Auto-Deploy in Cloudflare Pages)
+git add .
+git commit -m "feat: configure cloudflare pages and tunnel integration"
+git push origin main

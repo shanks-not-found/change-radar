@@ -38,11 +38,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware configuration
+# CORS Middleware configuration - allow local dev, Cloudflare Pages, and any client
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins or ["*"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
