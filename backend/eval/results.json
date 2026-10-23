@@ -1,0 +1,23 @@
+{
+  "vector_only": {
+    "recall@1": 0.96,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "mrr": 0.98
+  },
+  "keyword_only": {
+    "recall@1": 1.0,
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "mrr": 1.0
+  },
+  "hybrid": {
+    "recall@1": 0.68,
+    "recall@3": 0.96,
+    "recall@5": 1.0,
+    "recall@10": 1.0,
+    "mrr": 0.8167
+  }
+}

@@ -1,0 +1,177 @@
+[
+  {
+    "query_id": "q01",
+    "query": "Pydantic parse_obj removal and migration to model_validate",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.0.0"],
+    "category": "api_removal"
+  },
+  {
+    "query_id": "q02",
+    "query": "BaseModel dict method deprecated model_dump",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.0.0"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q03",
+    "query": "Pydantic Config inner class replaced with ConfigDict",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.0.0"],
+    "category": "breaking_change"
+  },
+  {
+    "query_id": "q04",
+    "query": "Pydantic strict boolean coercion strings yes 1 rejected",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.6.0"],
+    "category": "behavior_change"
+  },
+  {
+    "query_id": "q05",
+    "query": "Field regex argument deprecated in favor of pattern",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.5.0"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q06",
+    "query": "FastAPI upgrade to Pydantic v2 compatibility",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.100.0"],
+    "category": "compatibility"
+  },
+  {
+    "query_id": "q07",
+    "query": "FastAPI multipart form data ReDoS CVE-2024-24762",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.109.1", "osv_fastapi_cve_2024_24762"],
+    "category": "cve_security"
+  },
+  {
+    "query_id": "q08",
+    "query": "FastAPI Starlette 0.36.0 requirement and APIRoute annotations",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.110.0"],
+    "category": "breaking_change"
+  },
+  {
+    "query_id": "q09",
+    "query": "CVE-2024-24762 vulnerability affecting FastAPI version 0.109.0",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.109.1", "osv_fastapi_cve_2024_24762"],
+    "category": "cve_security"
+  },
+  {
+    "query_id": "q10",
+    "query": "Starlette dependency version bump in FastAPI",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.100.0", "fastapi_0.110.0"],
+    "category": "dependency_update"
+  },
+  {
+    "query_id": "q11",
+    "query": "LangChain LLMChain deprecation migrate to LCEL prompt pipe llm",
+    "package": "langchain",
+    "expected_doc_ids": ["langchain_0.2.0"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q12",
+    "query": "LangChain package split into langchain-core and langchain-community",
+    "package": "langchain",
+    "expected_doc_ids": ["langchain_0.1.0"],
+    "category": "architecture_split"
+  },
+  {
+    "query_id": "q13",
+    "query": "initialize_agent deprecated replaced by create_tool_calling_agent",
+    "package": "langchain",
+    "expected_doc_ids": ["langchain_0.2.0"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q14",
+    "query": "Arbitrary code execution CVE-2023-36258 in PALChain",
+    "package": "langchain",
+    "expected_doc_ids": ["osv_langchain_cve_2023_36258"],
+    "category": "cve_security"
+  },
+  {
+    "query_id": "q15",
+    "query": "ChatGoogleGenerativeAI message parsing fix in LangChain",
+    "package": "langchain",
+    "expected_doc_ids": ["langchain_0.2.5"],
+    "category": "bug_fix"
+  },
+  {
+    "query_id": "q16",
+    "query": "ChromaDB PersistentClient migration from duckdb and parquet",
+    "package": "chromadb",
+    "expected_doc_ids": ["chromadb_0.4.0"],
+    "category": "architecture_change"
+  },
+  {
+    "query_id": "q17",
+    "query": "chroma_db_impl configuration key removed in Chroma",
+    "package": "chromadb",
+    "expected_doc_ids": ["chromadb_0.5.0"],
+    "category": "breaking_change"
+  },
+  {
+    "query_id": "q18",
+    "query": "Chroma where_document operators $contains and $not_contains",
+    "package": "chromadb",
+    "expected_doc_ids": ["chromadb_0.4.22"],
+    "category": "feature_update"
+  },
+  {
+    "query_id": "q19",
+    "query": "Chroma deprecation of raw dict settings in Client constructor",
+    "package": "chromadb",
+    "expected_doc_ids": ["chromadb_0.4.22"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q20",
+    "query": "ChromaDB replacing duckdb+parquet with SQLite and HNSW",
+    "package": "chromadb",
+    "expected_doc_ids": ["chromadb_0.4.0"],
+    "category": "breaking_change"
+  },
+  {
+    "query_id": "q21",
+    "query": "Pydantic Rust rewrite changes in V2",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.0.0"],
+    "category": "architecture_change"
+  },
+  {
+    "query_id": "q22",
+    "query": "FastAPI async APIRoute return annotation requirement",
+    "package": "fastapi",
+    "expected_doc_ids": ["fastapi_0.110.0"],
+    "category": "breaking_change"
+  },
+  {
+    "query_id": "q23",
+    "query": "LangChain Expression Language LCEL pipe syntax migration",
+    "package": "langchain",
+    "expected_doc_ids": ["langchain_0.2.0"],
+    "category": "api_deprecation"
+  },
+  {
+    "query_id": "q24",
+    "query": "PythonAstREPLTool security vulnerability code execution",
+    "package": "langchain",
+    "expected_doc_ids": ["osv_langchain_cve_2023_36258"],
+    "category": "cve_security"
+  },
+  {
+    "query_id": "q25",
+    "query": "FailFast validation mode in Pydantic releases",
+    "package": "pydantic",
+    "expected_doc_ids": ["pydantic_2.6.0"],
+    "category": "feature_update"
+  }
+]

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "fastapi_0.100.0",
+    "package_name": "fastapi",
+    "version": "0.100.0",
+    "url": "https://github.com/fastapi/fastapi/releases/tag/0.100.0",
+    "published_at": "2023-07-08",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nFastAPI 0.100.0 introduces support for Pydantic v2. Pydantic v1 is still supported via pydantic.v1 compatibility module. Upgraded starlette dependency."
+  },
+  {
+    "id": "fastapi_0.109.1",
+    "package_name": "fastapi",
+    "version": "0.109.1",
+    "url": "https://github.com/fastapi/fastapi/releases/tag/0.109.1",
+    "published_at": "2024-02-05",
+    "source_type": "github_release",
+    "raw_content": "## Security Fixes\nFix ReDoS vulnerability in multipart form data parsing (CVE-2024-24762). Ensure upload headers do not consume infinite backtrack regex."
+  },
+  {
+    "id": "fastapi_0.110.0",
+    "package_name": "fastapi",
+    "version": "0.110.0",
+    "url": "https://github.com/fastapi/fastapi/releases/tag/0.110.0",
+    "published_at": "2024-02-24",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nDrop support for older Starlette versions. Starlette >= 0.36.0 is now required. Async APIRoute handlers require return annotations for strict response models."
+  },
+  {
+    "id": "pydantic_2.0.0",
+    "package_name": "pydantic",
+    "version": "2.0.0",
+    "url": "https://github.com/pydantic/pydantic/releases/tag/v2.0.0",
+    "published_at": "2023-06-30",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nPydantic V2 core is rewritten in Rust. Deprecated BaseModel.dict() in favor of BaseModel.model_dump(). Removed BaseModel.parse_obj() in favor of BaseModel.model_validate(). Config inner class replaced by ConfigDict."
+  },
+  {
+    "id": "pydantic_2.5.0",
+    "package_name": "pydantic",
+    "version": "2.5.0",
+    "url": "https://github.com/pydantic/pydantic/releases/tag/v2.5.0",
+    "published_at": "2023-11-14",
+    "source_type": "github_release",
+    "raw_content": "## Features and Deprecations\nAdded support for typing.Self. Deprecated regex argument in Field; use pattern instead. Improved json_schema generation."
+  },
+  {
+    "id": "pydantic_2.6.0",
+    "package_name": "pydantic",
+    "version": "2.6.0",
+    "url": "https://github.com/pydantic/pydantic/releases/tag/v2.6.0",
+    "published_at": "2024-01-22",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nStrict boolean coercion changes. Strings like 'yes' or '1' are no longer coerced to True when strict=True. Added FailFast validation mode."
+  },
+  {
+    "id": "langchain_0.1.0",
+    "package_name": "langchain",
+    "version": "0.1.0",
+    "url": "https://github.com/langchain-ai/langchain/releases/tag/v0.1.0",
+    "published_at": "2024-01-08",
+    "source_type": "github_release",
+    "raw_content": "## Release 0.1.0 Architecture\nSplit core package into langchain-core and langchain-community. Deprecated monolithic langchain imports."
+  },
+  {
+    "id": "langchain_0.2.0",
+    "package_name": "langchain",
+    "version": "0.2.0",
+    "url": "https://github.com/langchain-ai/langchain/releases/tag/v0.2.0",
+    "published_at": "2024-05-15",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nLLMChain is officially deprecated. Users must transition to LangChain Expression Language (LCEL) pipelines using pipe operators: prompt | llm. Deprecated initialize_agent in favor of create_tool_calling_agent."
+  },
+  {
+    "id": "langchain_0.2.5",
+    "package_name": "langchain",
+    "version": "0.2.5",
+    "url": "https://github.com/langchain-ai/langchain/releases/tag/v0.2.5",
+    "published_at": "2024-06-12",
+    "source_type": "github_release",
+    "raw_content": "## Fixes and Improvements\nStreamlined message parsing in ChatGoogleGenerativeAI and ChatOpenAI. Fixed serialization of tool calls in BaseModel payload."
+  },
+  {
+    "id": "chromadb_0.4.0",
+    "package_name": "chromadb",
+    "version": "0.4.0",
+    "url": "https://github.com/chroma-core/chroma/releases/tag/0.4.0",
+    "published_at": "2023-07-17",
+    "source_type": "github_release",
+    "raw_content": "## Architecture Overhaul\nChroma 0.4.0 introduces unified PersistentClient and HttpClient. Removed clickhouse and duckdb+parquet backends in favor of SQLite and local HNSW segments."
+  },
+  {
+    "id": "chromadb_0.4.22",
+    "package_name": "chromadb",
+    "version": "0.4.22",
+    "url": "https://github.com/chroma-core/chroma/releases/tag/0.4.22",
+    "published_at": "2024-01-18",
+    "source_type": "github_release",
+    "raw_content": "## Changes\nAdded where_document operators $contains and $not_contains. Deprecated raw dict settings in chromadb.Client(Settings())."
+  },
+  {
+    "id": "chromadb_0.5.0",
+    "package_name": "chromadb",
+    "version": "0.5.0",
+    "url": "https://github.com/chroma-core/chroma/releases/tag/0.5.0",
+    "published_at": "2024-04-10",
+    "source_type": "github_release",
+    "raw_content": "## Breaking Changes\nRemoved chroma_db_impl configuration key completely. Client creation now requires chromadb.PersistentClient(path=...) or chromadb.HttpClient()."
+  },
+  {
+    "id": "osv_fastapi_cve_2024_24762",
+    "package_name": "fastapi",
+    "version": "0.109.1",
+    "url": "https://osv.dev/vulnerability/GHSA-fastapi-mock-1",
+    "published_at": "2024-02-05",
+    "source_type": "osv_advisory",
+    "raw_content": "Security Advisory: GHSA-fastapi-mock-1 (CVE-2024-24762)\nPackage: fastapi (PyPI)\nSeverity: HIGH\nFixed in: 0.109.1\nSummary: Form data parsing ReDoS vulnerability in FastAPI multipart processing."
+  },
+  {
+    "id": "osv_langchain_cve_2023_36258",
+    "package_name": "langchain",
+    "version": "0.0.200",
+    "url": "https://osv.dev/vulnerability/GHSA-langchain-cve-2023-36258",
+    "published_at": "2023-06-25",
+    "source_type": "osv_advisory",
+    "raw_content": "Security Advisory: GHSA-langchain-cve-2023-36258 (CVE-2023-36258)\nPackage: langchain (PyPI)\nSeverity: CRITICAL\nFixed in: 0.0.210\nSummary: Arbitrary code execution via unsafe python exec in PALChain and PythonAstREPLTool."
+  }
+]
