@@ -179,26 +179,40 @@ class GeminiProvider(LLMProvider):
                 return fn()
             except Exception as e:
                 last_exc = e
+                err_msg = str(e).lower()
+                # Fast exit for auth or suspension errors (don't waste time retrying)
+                if any(k in err_msg for k in ["permission_denied", "403", "suspended", "api_key_invalid"]):
+                    logger.error(f"Gemini API authentication/permission error: {e}")
+                    raise e
                 logger.warning(f"LLM call attempt {attempt}/{max_attempts} failed: {e}. Retrying in {delay}s...")
                 time.sleep(delay)
                 delay *= 2.0
         raise last_exc
 
     def analyze_change_impact(self, context: ImpactContext) -> ImpactFinding:
-        llm = self.get_chat_model()
-        user_prompt = format_impact_context(context)
+        try:
+            llm = self.get_chat_model()
+            user_prompt = format_impact_context(context)
 
-        structured_llm = llm.with_structured_output(ImpactFinding)
+            structured_llm = llm.with_structured_output(ImpactFinding)
 
-        def _call():
-            messages = [
-                ("system", IMPACT_ANALYSIS_SYSTEM_PROMPT),
-                ("human", user_prompt),
-            ]
-            return structured_llm.invoke(messages)
+            def _call():
+                messages = [
+                    ("system", IMPACT_ANALYSIS_SYSTEM_PROMPT),
+                    ("human", user_prompt),
+                ]
+                return structured_llm.invoke(messages)
 
-        raw_finding: ImpactFinding = self._execute_with_retry(_call)
-        return post_validate_impact_finding(raw_finding, context)
+            raw_finding: ImpactFinding = self._execute_with_retry(_call)
+            return post_validate_impact_finding(raw_finding, context)
+        except Exception as e:
+            logger.error(f"Gemini analyze_change_impact failed ({e}). Falling back to deterministic offline provider.")
+            fallback_finding = MockLLMProvider().analyze_change_impact(context)
+            fallback_finding.uncertainty_notes = (
+                f"[Fallback Mode: Live Gemini call encountered: {type(e).__name__}. "
+                "Generated using deterministic offline RAG analysis.]"
+            )
+            return fallback_finding
 
     def answer_question(
         self,
@@ -206,29 +220,38 @@ class GeminiProvider(LLMProvider):
         evidence: List[Dict[str, Any]],
         project_context: Optional[str] = None,
     ) -> GroundedAnswer:
-        llm = self.get_chat_model()
-        structured_llm = llm.with_structured_output(GroundedAnswer)
+        try:
+            llm = self.get_chat_model()
+            structured_llm = llm.with_structured_output(GroundedAnswer)
 
-        chunks_text = "\n---\n".join([
-            f"[CHUNK {c.get('chunk_id', c.get('id', 'N/A'))}] ({c.get('package_name', '')} v{c.get('version', '')}):\n"
-            f"{c.get('content', '')}\nURL: {c.get('url', '')}"
-            for c in evidence
-        ])
+            chunks_text = "\n---\n".join([
+                f"[CHUNK {c.get('chunk_id', c.get('id', 'N/A'))}] ({c.get('package_name', '')} v{c.get('version', '')}):\n"
+                f"{c.get('content', '')}\nURL: {c.get('url', '')}"
+                for c in evidence
+            ])
 
-        user_prompt = ASK_USER_TEMPLATE.format(
-            question=question,
-            project_context=project_context or "No project code context provided.",
-            evidence_chunks=chunks_text or "No external evidence chunks available.",
-        )
+            user_prompt = ASK_USER_TEMPLATE.format(
+                question=question,
+                project_context=project_context or "No project code context provided.",
+                evidence_chunks=chunks_text or "No external evidence chunks available.",
+            )
 
-        def _call():
-            messages = [
-                ("system", ASK_SYSTEM_PROMPT),
-                ("human", user_prompt),
-            ]
-            return structured_llm.invoke(messages)
+            def _call():
+                messages = [
+                    ("system", ASK_SYSTEM_PROMPT),
+                    ("human", user_prompt),
+                ]
+                return structured_llm.invoke(messages)
 
-        return self._execute_with_retry(_call)
+            return self._execute_with_retry(_call)
+        except Exception as e:
+            logger.error(f"Gemini answer_question failed ({e}). Falling back to deterministic offline answer.")
+            fallback_ans = MockLLMProvider().answer_question(question, evidence, project_context)
+            fallback_ans.caveats = (
+                f"[Fallback Mode: Live Gemini call encountered: {type(e).__name__}. "
+                "Synthesized from local evidence chunks.]"
+            )
+            return fallback_ans
 
 
 # ------------------------------------------------------------------------------
