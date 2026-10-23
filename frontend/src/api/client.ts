@@ -10,13 +10,12 @@ import {
 } from "../types";
 
 // Resolves API base: uses VITE_API_URL if defined, defaults to http://localhost:8000 in dev,
-// and "" (same-origin relative URL) in production so Cloudflare Pages _redirects proxies /api/*
+// and the live Cloudflare Tunnel URL in production
 const API_BASE = (
-  import.meta.env.VITE_API_URL !== undefined
-    ? import.meta.env.VITE_API_URL
-    : import.meta.env.DEV
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
     ? "http://localhost:8000"
-    : ""
+    : "https://flows-broker-postings-leg.trycloudflare.com")
 ).replace(/\/$/, "");
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
