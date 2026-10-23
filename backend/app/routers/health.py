@@ -47,13 +47,15 @@ def health_check() -> HealthResponse:
         embedding_loaded = False
 
     # 4. Check LLM Provider
-    provider = settings.llm_provider.lower()
-    has_gemini_key = bool(settings.gemini_api_key or os.environ.get("GEMINI_API_KEY"))
-    llm_configured = True if provider == "mock" else has_gemini_key
+    from app.config import get_effective_gemini_key
+    gemini_key = get_effective_gemini_key()
+    has_gemini_key = bool(gemini_key)
+    active_provider = "gemini" if has_gemini_key else settings.llm_provider.lower().strip()
+    llm_configured = True if active_provider == "mock" else has_gemini_key
 
     return HealthResponse(
         status="ok" if db_ok else "degraded",
-        llm_provider=provider,
+        llm_provider=active_provider,
         llm_configured=llm_configured,
         gemini_model=settings.gemini_model,
         embedding_model=settings.embedding_model,

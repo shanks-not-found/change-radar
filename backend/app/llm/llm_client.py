@@ -15,7 +15,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
-from app.config import settings
+from app.config import settings, get_effective_gemini_key, get_effective_llm_provider
 from app.schemas import (
     ImpactContext,
     ImpactFinding,
@@ -141,7 +141,7 @@ class LLMProvider(ABC):
 
 class GeminiProvider(LLMProvider):
     def __init__(self) -> None:
-        api_key = settings.gemini_api_key or os.environ.get("GEMINI_API_KEY")
+        api_key = get_effective_gemini_key()
         if not api_key:
             logger.warning(
                 "GEMINI_API_KEY is not configured. Live calls will fail. Use LLM_PROVIDER=mock for demo/offline mode."
@@ -158,12 +158,13 @@ class GeminiProvider(LLMProvider):
                 raise RuntimeError(
                     "langchain_google_genai is not installed. Please run pip install langchain-google-genai."
                 )
-            if not self.api_key:
+            api_key = self.api_key or get_effective_gemini_key()
+            if not api_key:
                 raise ValueError("GEMINI_API_KEY is missing. Configure it in .env or switch to LLM_PROVIDER=mock.")
 
             self._llm = ChatGoogleGenerativeAI(
                 model=self.model_name,
-                google_api_key=self.api_key,
+                google_api_key=api_key,
                 temperature=0.1,
                 max_retries=3,
                 timeout=60,
@@ -424,12 +425,17 @@ class MockLLMProvider(LLMProvider):
 # ------------------------------------------------------------------------------
 
 def get_provider() -> LLMProvider:
-    provider_name = (settings.llm_provider or "gemini").lower()
+    api_key = get_effective_gemini_key()
+    provider_name = (settings.llm_provider or "gemini").lower().strip()
+    
+    # If a Gemini API key is provided, automatically activate Gemini provider
+    if api_key:
+        return GeminiProvider()
+
     if provider_name == "mock":
         return MockLLMProvider()
     elif provider_name == "gemini":
-        # If Gemini API key is missing, log a warning and fall back to Mock if desired or let user know
-        if not settings.gemini_api_key and not os.environ.get("GEMINI_API_KEY"):
+        if not api_key:
             logger.info("GEMINI_API_KEY is not set. Defaulting to MockLLMProvider for offline execution.")
             return MockLLMProvider()
         return GeminiProvider()

@@ -47,6 +47,34 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+def get_effective_gemini_key() -> Optional[str]:
+    """Dynamically reads the Gemini API key from settings, env, or disk .env files."""
+    if settings.gemini_api_key:
+        return settings.gemini_api_key
+    import os
+    if os.environ.get("GEMINI_API_KEY"):
+        return os.environ.get("GEMINI_API_KEY")
+    for env_path in (BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env"):
+        if env_path.exists():
+            try:
+                for line in env_path.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line.startswith("GEMINI_API_KEY=") and not line.startswith("#"):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if val:
+                            return val
+            except Exception:
+                pass
+    return None
+
+def get_effective_llm_provider() -> str:
+    """Returns 'gemini' if key is present or provider configured as gemini, else 'mock'."""
+    key = get_effective_gemini_key()
+    if key:
+        return "gemini"
+    p = (settings.llm_provider or "gemini").lower().strip()
+    return p
+
 # Ensure data directories exist
 Path(settings.database_path).parent.mkdir(parents=True, exist_ok=True)
 Path(settings.chroma_persist_dir).mkdir(parents=True, exist_ok=True)
