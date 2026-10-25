@@ -204,6 +204,10 @@ export const App: React.FC = () => {
       <Navbar
         health={health}
         onReset={() => setView("upload")}
+        onRefreshHealth={() => {
+          fetchHealth();
+          loadProjects();
+        }}
         onOpenAsk={() => {
           if (!currentProject) {
             alert("Please select or load a project before asking AI questions.");

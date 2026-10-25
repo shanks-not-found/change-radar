@@ -9,17 +9,41 @@ import {
   AskResponse,
 } from "../types";
 
-// Resolves API base: uses VITE_API_URL if defined, defaults to http://localhost:8000 in dev,
-// and the live Cloudflare Tunnel URL in production
-const API_BASE = (
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:8000"
-    : "https://flows-broker-postings-leg.trycloudflare.com")
-).replace(/\/$/, "");
+// Default live tunnel URL established via Cloudflare Tunnel
+const DEFAULT_TUNNEL_URL = "https://strip-large-floors-unlike.trycloudflare.com";
+
+export function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("STACKSIGNAL_API_URL");
+    if (saved && saved.trim()) {
+      return saved.trim().replace(/\/$/, "");
+    }
+  }
+
+  if (import.meta.env.VITE_API_URL) {
+    return (import.meta.env.VITE_API_URL as string).replace(/\/$/, "");
+  }
+
+  if (import.meta.env.DEV) {
+    return "http://localhost:8000";
+  }
+
+  return DEFAULT_TUNNEL_URL;
+}
+
+export function setApiBase(url: string) {
+  if (typeof window !== "undefined") {
+    if (url && url.trim()) {
+      localStorage.setItem("STACKSIGNAL_API_URL", url.trim().replace(/\/$/, ""));
+    } else {
+      localStorage.removeItem("STACKSIGNAL_API_URL");
+    }
+  }
+}
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  const base = getApiBase();
+  const url = `${base}${endpoint}`;
   const resp = await fetch(url, options);
   if (!resp.ok) {
     let errorDetail = `Request failed with status ${resp.status}`;
@@ -107,10 +131,10 @@ export const api = {
   },
 
   getExportMarkdownUrl(scanId: string): string {
-    return `${API_BASE}/api/scans/${scanId}/export/markdown`;
+    return `${getApiBase()}/api/scans/${scanId}/export/markdown`;
   },
 
   getExportJsonUrl(scanId: string): string {
-    return `${API_BASE}/api/scans/${scanId}/export/json`;
+    return `${getApiBase()}/api/scans/${scanId}/export/json`;
   },
 };

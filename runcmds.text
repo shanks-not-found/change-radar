@@ -12,17 +12,22 @@ npm run dev
 
 # 3. Cloudflare Tunnel (Bridges Local Backend to Cloudflare)
 # Exposes http://localhost:8000 securely with a public HTTPS URL
+# Active live tunnel: https://strip-large-floors-unlike.trycloudflare.com
 npx --yes cloudflared tunnel --url http://localhost:8000
 
-# 4. Cloudflare Wrangler (CLI Login & Deployment)
-# Login to Cloudflare account in browser
-npx wrangler login
+# 4. Build Frontend for Production
+cd "d:\github\change radar\frontend"
+npm run build
 
-# Deploy Frontend build directly to Cloudflare Pages
+# 5. Deploy to Cloudflare Workers (change-radar.shashank161105.workers.dev)
 cd "d:\github\change radar"
+npx wrangler login
+npx wrangler deploy
+
+# (Alternative) Deploy to Cloudflare Pages (change-radar.pages.dev)
 npx wrangler pages deploy frontend/dist --project-name change-radar
 
-# 5. Git Push to GitHub (Triggers Auto-Deploy in Cloudflare Pages)
+# 6. Git Push to GitHub (Auto-Deploy if connected via GitHub)
 git add .
-git commit -m "feat: configure cloudflare pages and tunnel integration"
+git commit -m "fix: resolve blank screen by serving compiled dist bundle and configuring dynamic live tunnel"
 git push origin main
