@@ -1,0 +1,8 @@
+{
+  "name": "change-radar",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "deploy": "npx wrangler deploy"
+  }
+}
