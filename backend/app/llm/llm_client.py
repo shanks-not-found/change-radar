@@ -138,14 +138,6 @@ class LLMProvider(ABC):
 # ------------------------------------------------------------------------------
 # Groq Provider
 # ------------------------------------------------------------------------------
-# Groq Provider
-# ------------------------------------------------------------------------------
-
-SUPPORTED_GROQ_MODELS = [
-    "qwen/qwen3.8-27b",
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-]
 
 class GroqProvider(LLMProvider):
     def __init__(self) -> None:
@@ -155,32 +147,28 @@ class GroqProvider(LLMProvider):
                 "GROQ_API_KEY is not configured. Live calls will fail. Use LLM_PROVIDER=mock for demo/offline mode."
             )
         self.api_key = api_key
-        # Ensure default model is one of the verified working models
-        configured_model = settings.groq_model
-        if not configured_model or "llama-3.3-70b" in configured_model:
-            self.model_name = "qwen/qwen3.8-27b"
-        else:
-            self.model_name = configured_model
+        self.model_name = settings.groq_model or "llama-3.3-70b-versatile"
         self._llm = None
 
-    def get_chat_model(self, model_override: Optional[str] = None) -> Any:
-        model_to_use = model_override or self.model_name
-        try:
-            from langchain_groq import ChatGroq
-        except ImportError:
-            raise RuntimeError(
-                "langchain_groq is not installed. Please run pip install langchain-groq."
-            )
-        api_key = self.api_key or get_effective_groq_key()
-        if not api_key:
-            raise ValueError("GROQ_API_KEY is missing. Configure it in .env or switch to LLM_PROVIDER=mock.")
+    def get_chat_model(self) -> Any:
+        if self._llm is None:
+            try:
+                from langchain_groq import ChatGroq
+            except ImportError:
+                raise RuntimeError(
+                    "langchain_groq is not installed. Please run pip install langchain-groq."
+                )
+            api_key = self.api_key or get_effective_groq_key()
+            if not api_key:
+                raise ValueError("GROQ_API_KEY is missing. Configure it in .env or switch to LLM_PROVIDER=mock.")
 
-        return ChatGroq(
-            model=model_to_use,
-            groq_api_key=api_key,
-            temperature=0.1,
-            max_retries=2,
-        )
+            self._llm = ChatGroq(
+                model=self.model_name,
+                groq_api_key=api_key,
+                temperature=0.1,
+                max_retries=3,
+            )
+        return self._llm
 
     def _execute_with_retry(self, fn, max_attempts: int = 3, initial_delay: float = 1.0):
         delay = initial_delay
@@ -195,44 +183,35 @@ class GroqProvider(LLMProvider):
                 if any(k in err_msg for k in ["permission_denied", "403", "invalid_api_key", "unauthorized"]):
                     logger.error(f"Groq API authentication error: {e}")
                     raise e
-                # If model not found or tool error, don't retry same model
-                if "model_not_found" in err_msg or "404" in err_msg or "tool_use_failed" in err_msg:
-                    raise e
                 logger.warning(f"LLM call attempt {attempt}/{max_attempts} failed: {e}. Retrying in {delay}s...")
                 time.sleep(delay)
                 delay *= 2.0
         raise last_exc
 
     def analyze_change_impact(self, context: ImpactContext) -> ImpactFinding:
-        user_prompt = format_impact_context(context)
-        models_to_try = [self.model_name] + [m for m in SUPPORTED_GROQ_MODELS if m != self.model_name]
+        try:
+            llm = self.get_chat_model()
+            user_prompt = format_impact_context(context)
 
-        last_error = None
-        for model in models_to_try:
-            try:
-                llm = self.get_chat_model(model_override=model)
-                structured_llm = llm.with_structured_output(ImpactFinding)
+            structured_llm = llm.with_structured_output(ImpactFinding)
 
-                def _call():
-                    messages = [
-                        ("system", IMPACT_ANALYSIS_SYSTEM_PROMPT),
-                        ("human", user_prompt),
-                    ]
-                    return structured_llm.invoke(messages)
+            def _call():
+                messages = [
+                    ("system", IMPACT_ANALYSIS_SYSTEM_PROMPT),
+                    ("human", user_prompt),
+                ]
+                return structured_llm.invoke(messages)
 
-                raw_finding: ImpactFinding = self._execute_with_retry(_call)
-                return post_validate_impact_finding(raw_finding, context)
-            except Exception as e:
-                last_error = e
-                logger.warning(f"Groq call with model '{model}' failed: {e}. Trying fallback model if available...")
-
-        logger.error(f"All Groq models failed ({last_error}). Falling back to deterministic offline provider.")
-        fallback_finding = MockLLMProvider().analyze_change_impact(context)
-        fallback_finding.uncertainty_notes = (
-            f"[Fallback Mode: Live Groq call encountered: {type(last_error).__name__}. "
-            "Generated using deterministic offline RAG analysis.]"
-        )
-        return fallback_finding
+            raw_finding: ImpactFinding = self._execute_with_retry(_call)
+            return post_validate_impact_finding(raw_finding, context)
+        except Exception as e:
+            logger.error(f"Groq analyze_change_impact failed ({e}). Falling back to deterministic offline provider.")
+            fallback_finding = MockLLMProvider().analyze_change_impact(context)
+            fallback_finding.uncertainty_notes = (
+                f"[Fallback Mode: Live Groq call encountered: {type(e).__name__}. "
+                "Generated using deterministic offline RAG analysis.]"
+            )
+            return fallback_finding
 
     def answer_question(
         self,
@@ -240,45 +219,38 @@ class GroqProvider(LLMProvider):
         evidence: List[Dict[str, Any]],
         project_context: Optional[str] = None,
     ) -> GroundedAnswer:
-        chunks_text = "\n---\n".join([
-            f"[CHUNK {c.get('chunk_id', c.get('id', 'N/A'))}] ({c.get('package_name', '')} v{c.get('version', '')}):\n"
-            f"{c.get('content', '')}\nURL: {c.get('url', '')}"
-            for c in evidence
-        ])
+        try:
+            llm = self.get_chat_model()
+            structured_llm = llm.with_structured_output(GroundedAnswer)
 
-        user_prompt = ASK_USER_TEMPLATE.format(
-            question=question,
-            project_context=project_context or "No project code context provided.",
-            evidence_chunks=chunks_text or "No external evidence chunks available.",
-        )
+            chunks_text = "\n---\n".join([
+                f"[CHUNK {c.get('chunk_id', c.get('id', 'N/A'))}] ({c.get('package_name', '')} v{c.get('version', '')}):\n"
+                f"{c.get('content', '')}\nURL: {c.get('url', '')}"
+                for c in evidence
+            ])
 
-        models_to_try = [self.model_name] + [m for m in SUPPORTED_GROQ_MODELS if m != self.model_name]
+            user_prompt = ASK_USER_TEMPLATE.format(
+                question=question,
+                project_context=project_context or "No project code context provided.",
+                evidence_chunks=chunks_text or "No external evidence chunks available.",
+            )
 
-        last_error = None
-        for model in models_to_try:
-            try:
-                llm = self.get_chat_model(model_override=model)
-                structured_llm = llm.with_structured_output(GroundedAnswer)
+            def _call():
+                messages = [
+                    ("system", ASK_SYSTEM_PROMPT),
+                    ("human", user_prompt),
+                ]
+                return structured_llm.invoke(messages)
 
-                def _call():
-                    messages = [
-                        ("system", ASK_SYSTEM_PROMPT),
-                        ("human", user_prompt),
-                    ]
-                    return structured_llm.invoke(messages)
-
-                return self._execute_with_retry(_call)
-            except Exception as e:
-                last_error = e
-                logger.warning(f"Groq answer_question with model '{model}' failed: {e}. Trying fallback model...")
-
-        logger.error(f"All Groq models failed ({last_error}). Falling back to deterministic offline answer.")
-        fallback_ans = MockLLMProvider().answer_question(question, evidence, project_context)
-        fallback_ans.caveats = (
-            f"[Fallback Mode: Live Groq call encountered: {type(last_error).__name__}. "
-            "Synthesized from local evidence chunks.]"
-        )
-        return fallback_ans
+            return self._execute_with_retry(_call)
+        except Exception as e:
+            logger.error(f"Groq answer_question failed ({e}). Falling back to deterministic offline answer.")
+            fallback_ans = MockLLMProvider().answer_question(question, evidence, project_context)
+            fallback_ans.caveats = (
+                f"[Fallback Mode: Live Groq call encountered: {type(e).__name__}. "
+                "Synthesized from local evidence chunks.]"
+            )
+            return fallback_ans
 
 
 # ------------------------------------------------------------------------------
@@ -475,23 +447,23 @@ class MockLLMProvider(LLMProvider):
 # ------------------------------------------------------------------------------
 
 def get_provider() -> LLMProvider:
-    # If explicitly forced to mock (e.g. during test suites)
-    if os.environ.get("LLM_PROVIDER") == "mock":
-        return MockLLMProvider()
-
     api_key = get_effective_groq_key()
     provider_name = (settings.llm_provider or "groq").lower().strip()
     
-    # If mock explicitly requested in settings
-    if provider_name == "mock":
-        return MockLLMProvider()
-
-    # If a Groq API key is available, activate Groq provider
+    # If a Groq API key is provided, automatically activate Groq provider
     if api_key:
         return GroqProvider()
 
-    logger.info("GROQ_API_KEY is not set. Defaulting to MockLLMProvider for offline execution.")
-    return MockLLMProvider()
+    if provider_name == "mock":
+        return MockLLMProvider()
+    elif provider_name == "groq":
+        if not api_key:
+            logger.info("GROQ_API_KEY is not set. Defaulting to MockLLMProvider for offline execution.")
+            return MockLLMProvider()
+        return GroqProvider()
+    else:
+        logger.warning(f"Unknown provider '{provider_name}'. Falling back to MockLLMProvider.")
+        return MockLLMProvider()
 
 def get_llm() -> Any:
     """Returns configured LangChain chat model."""

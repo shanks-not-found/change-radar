@@ -1,58 +1,37 @@
 # =======================================================
-# Change Radar / StackSignal - Run & Deploy Guide
+# Change Radar / StackSignal - Run & Deploy Commands
 # =======================================================
 
 # -------------------------------------------------------
-# WHAT WAS FIXED:
+# WHY WAS THE BACKEND OFFLINE WHEN IDE / PC WAS CLOSED?
 # -------------------------------------------------------
-# 1. CLOUDFLARE WEB BACKEND:
-#    - Added Cloudflare Edge API Worker (`worker.ts` and `functions/api/[[route]].ts`).
-#    - Removed dead trycloudflare tunnel URL (`strip-large-floors-unlike.trycloudflare.com`).
-#    - In the web (Cloudflare), all requests (`/api/*`) are now handled directly by
-#      the Cloudflare Edge Worker with 24/7 uptime!
-#    - "Backend Connected" is green and online directly in Cloudflare.
-#
-# 2. MOCK LLM ISSUE FIXED:
-#    - Groq model `llama-3.3-70b-versatile` was returning 404 (model not found on Groq),
-#      which caused the backend to crash on every scan and fall back to MockLLMProvider.
-#    - Updated to verified working model `qwen/qwen3.8-27b` (with automatic fallback to
-#      `openai/gpt-oss-120b` and `openai/gpt-oss-20b`).
-#    - Fixed conflicting `LLM_PROVIDER=gemini` in `backend/.env`.
-#    - Ask AI and Scan Analysis now run LIVE AI analysis with real structured output.
+# Cloudflare Pages / Workers only hosts static HTML/JS frontend assets.
+# Cloudflare cannot run Python FastAPI, ChromaDB, or SQLite.
+# Previously, the backend was running on your local computer via a temporary
+# tunnel (trycloudflare.com). Whenever you close your IDE or computer,
+# that local backend process terminates, causing Cloudflare to show "Backend Offline".
 
 # -------------------------------------------------------
-# OPTION A: DEPLOY TO CLOUDFLARE (Web Always Working)
+# HOW TO KEEP BACKEND ONLINE 24/7 (ALWAYS ONLINE):
 # -------------------------------------------------------
-# Step 1: Build Frontend
-cd "d:\github\change radar\frontend"
-npm run build
-
-# Step 2: Deploy to Cloudflare Worker + Edge API
-cd "d:\github\change radar"
-npx wrangler deploy
-
-# OR Deploy to Cloudflare Pages:
-npx wrangler pages deploy frontend/dist --project-name change-radar
-
-# OR Push to GitHub (Auto-deploys via Cloudflare Pages CI):
-git add .
-git commit -m "feat: add cloudflare edge api backend with live groq ai and model fallbacks"
-git push origin main
-
-# -------------------------------------------------------
-# OPTION B: 24/7 PYTHON FASTAPI BACKEND (Render.com)
-# -------------------------------------------------------
-# If you want the full Python FastAPI + ChromaDB backend running 24/7:
+# Deploy the backend to Render.com (100% Free 24/7 Python Web Service):
 # 1. Go to https://dashboard.render.com
-# 2. Click "New +" -> "Blueprint"
-# 3. Connect https://github.com/shanks-not-found/change-radar
-#    (It will use the updated `render.yaml` with `qwen/qwen3.8-27b`)
-# 4. Add GROQ_API_KEY in Render dashboard environment settings
-# 5. Open your Cloudflare site, click "Backend Connected" pill, enter your
-#    Render URL (e.g. https://change-radar-backend.onrender.com) and click "Test & Save".
+# 2. Click "New +" -> "Blueprint" (or "Web Service")
+# 3. Connect your repository: https://github.com/shanks-not-found/change-radar
+# 4. Render will automatically read `render.yaml` from the repo:
+#    - Root Directory: backend
+#    - Build Command: pip install -r requirements.txt
+#    - Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# 5. Add your Environment Variable in Render:
+#    - GROQ_API_KEY: (your Groq API key)
+# 6. Click "Deploy". Render will give you a permanent 24/7 HTTPS URL, e.g.:
+#    https://change-radar-backend.onrender.com
+# 7. Open your Cloudflare site (change-radar.pages.dev), click the "Backend Offline"
+#    pill in the top-right header, paste the Render URL, and click "Test & Save".
+#    Or set VITE_API_URL in frontend/.env / wrangler.toml and redeploy!
 
 # -------------------------------------------------------
-# OPTION C: LOCAL DEVELOPMENT
+# LOCAL DEVELOPMENT (Only when developing on your machine)
 # -------------------------------------------------------
 # Terminal 1 - Backend:
 cd "d:\github\change radar\backend"
@@ -61,3 +40,26 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 # Terminal 2 - Frontend:
 cd "d:\github\change radar\frontend"
 npm run dev
+
+# -------------------------------------------------------
+# TEMPORARY TUNNEL (For testing local PC backend through Cloudflare)
+# Note: Only works while terminal & IDE are kept open!
+# -------------------------------------------------------
+npx --yes cloudflared tunnel --url http://localhost:8000
+
+# -------------------------------------------------------
+# BUILD & DEPLOY FRONTEND TO CLOUDFLARE
+# -------------------------------------------------------
+cd "d:\github\change radar\frontend"
+npm run build
+
+# Deploy to Cloudflare Pages (change-radar.pages.dev):
+cd "d:\github\change radar"
+npx wrangler pages deploy frontend/dist --project-name change-radar
+
+# -------------------------------------------------------
+# PUSH TO GITHUB (Syncs changes & updates Render backend)
+# -------------------------------------------------------
+git add .
+git commit -m "feat: add 24/7 cloud backend deployment config (render.yaml, Procfile, dynamic PORT)"
+git push origin main

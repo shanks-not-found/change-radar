@@ -24,8 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({ health, onReset, onOpenAsk, onRe
     setTestStatus(null);
     try {
       const cleanUrl = customUrl.trim().replace(/\/$/, "");
-      const testEndpoint = cleanUrl ? `${cleanUrl}/api/health` : "/api/health";
-      const res = await fetch(testEndpoint);
+      const res = await fetch(`${cleanUrl}/api/health`);
       if (res.ok) {
         setApiBase(cleanUrl);
         setTestStatus("success");
