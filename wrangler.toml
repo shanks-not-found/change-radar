@@ -1,5 +1,6 @@
 name = "change-radar"
 compatibility_date = "2024-10-01"
+main = "./worker.ts"
 
 [build]
 command = "npm --prefix frontend install && npm --prefix frontend run build"

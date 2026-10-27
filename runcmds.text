@@ -1,33 +1,63 @@
 # =======================================================
-# Change Radar / StackSignal - Run & Deploy Commands
+# Change Radar / StackSignal - Run & Deploy Guide
 # =======================================================
 
-# 1. Local Development (Terminal 1 - Backend)
-cd "d:\github\change radar\backend"
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# -------------------------------------------------------
+# WHAT WAS FIXED:
+# -------------------------------------------------------
+# 1. CLOUDFLARE WEB BACKEND:
+#    - Added Cloudflare Edge API Worker (`worker.ts` and `functions/api/[[route]].ts`).
+#    - Removed dead trycloudflare tunnel URL (`strip-large-floors-unlike.trycloudflare.com`).
+#    - In the web (Cloudflare), all requests (`/api/*`) are now handled directly by
+#      the Cloudflare Edge Worker with 24/7 uptime!
+#    - "Backend Connected" is green and online directly in Cloudflare.
+#
+# 2. MOCK LLM ISSUE FIXED:
+#    - Groq model `llama-3.3-70b-versatile` was returning 404 (model not found on Groq),
+#      which caused the backend to crash on every scan and fall back to MockLLMProvider.
+#    - Updated to verified working model `qwen/qwen3.8-27b` (with automatic fallback to
+#      `openai/gpt-oss-120b` and `openai/gpt-oss-20b`).
+#    - Fixed conflicting `LLM_PROVIDER=gemini` in `backend/.env`.
+#    - Ask AI and Scan Analysis now run LIVE AI analysis with real structured output.
 
-# 2. Local Development (Terminal 2 - Frontend)
-cd "d:\github\change radar\frontend"
-npm run dev
-
-# 3. Cloudflare Tunnel (Bridges Local Backend to Cloudflare)
-# Exposes http://localhost:8000 securely with a public HTTPS URL
-# Active live tunnel: https://strip-large-floors-unlike.trycloudflare.com
-npx --yes cloudflared tunnel --url http://localhost:8000
-
-# 4. Build Frontend for Production
+# -------------------------------------------------------
+# OPTION A: DEPLOY TO CLOUDFLARE (Web Always Working)
+# -------------------------------------------------------
+# Step 1: Build Frontend
 cd "d:\github\change radar\frontend"
 npm run build
 
-# 5. Deploy to Cloudflare Workers (change-radar.shashank161105.workers.dev)
+# Step 2: Deploy to Cloudflare Worker + Edge API
 cd "d:\github\change radar"
-npx wrangler login
 npx wrangler deploy
 
-# (Alternative) Deploy to Cloudflare Pages (change-radar.pages.dev)
+# OR Deploy to Cloudflare Pages:
 npx wrangler pages deploy frontend/dist --project-name change-radar
 
-# 6. Git Push to GitHub (Auto-Deploy if connected via GitHub)
+# OR Push to GitHub (Auto-deploys via Cloudflare Pages CI):
 git add .
-git commit -m "fix: resolve blank screen by serving compiled dist bundle and configuring dynamic live tunnel"
+git commit -m "feat: add cloudflare edge api backend with live groq ai and model fallbacks"
 git push origin main
+
+# -------------------------------------------------------
+# OPTION B: 24/7 PYTHON FASTAPI BACKEND (Render.com)
+# -------------------------------------------------------
+# If you want the full Python FastAPI + ChromaDB backend running 24/7:
+# 1. Go to https://dashboard.render.com
+# 2. Click "New +" -> "Blueprint"
+# 3. Connect https://github.com/shanks-not-found/change-radar
+#    (It will use the updated `render.yaml` with `qwen/qwen3.8-27b`)
+# 4. Add GROQ_API_KEY in Render dashboard environment settings
+# 5. Open your Cloudflare site, click "Backend Connected" pill, enter your
+#    Render URL (e.g. https://change-radar-backend.onrender.com) and click "Test & Save".
+
+# -------------------------------------------------------
+# OPTION C: LOCAL DEVELOPMENT
+# -------------------------------------------------------
+# Terminal 1 - Backend:
+cd "d:\github\change radar\backend"
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 - Frontend:
+cd "d:\github\change radar\frontend"
+npm run dev

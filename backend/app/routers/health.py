@@ -50,8 +50,15 @@ def health_check() -> HealthResponse:
     from app.config import get_effective_groq_key
     groq_key = get_effective_groq_key()
     has_groq_key = bool(groq_key)
-    active_provider = "groq" if has_groq_key else settings.llm_provider.lower().strip()
-    llm_configured = True if active_provider == "mock" else has_groq_key
+    if os.environ.get("LLM_PROVIDER") == "mock" or settings.llm_provider.lower().strip() == "mock":
+        active_provider = "mock"
+        llm_configured = True
+    elif has_groq_key:
+        active_provider = "groq"
+        llm_configured = True
+    else:
+        active_provider = settings.llm_provider.lower().strip()
+        llm_configured = False
 
     return HealthResponse(
         status="ok" if db_ok else "degraded",

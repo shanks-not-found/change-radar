@@ -9,10 +9,8 @@ import {
   AskResponse,
 } from "../types";
 
-// Default live tunnel URL established via Cloudflare Tunnel
-const DEFAULT_TUNNEL_URL = "https://strip-large-floors-unlike.trycloudflare.com";
-
 export function getApiBase(): string {
+  // 1. Custom URL configured by user in UI
   if (typeof window !== "undefined") {
     const saved = localStorage.getItem("STACKSIGNAL_API_URL");
     if (saved && saved.trim()) {
@@ -20,15 +18,19 @@ export function getApiBase(): string {
     }
   }
 
+  // 2. Build-time environment variable (if specified)
   if (import.meta.env.VITE_API_URL) {
     return (import.meta.env.VITE_API_URL as string).replace(/\/$/, "");
   }
 
+  // 3. Local development server
   if (import.meta.env.DEV) {
     return "http://localhost:8000";
   }
 
-  return DEFAULT_TUNNEL_URL;
+  // 4. In web production (Cloudflare Pages / Workers), use same-origin relative path
+  // Requests go to /api/* which are handled by the Cloudflare Edge API Worker
+  return "";
 }
 
 export function setApiBase(url: string) {

@@ -24,7 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({ health, onReset, onOpenAsk, onRe
     setTestStatus(null);
     try {
       const cleanUrl = customUrl.trim().replace(/\/$/, "");
-      const res = await fetch(`${cleanUrl}/api/health`);
+      const testEndpoint = cleanUrl ? `${cleanUrl}/api/health` : "/api/health";
+      const res = await fetch(testEndpoint);
       if (res.ok) {
         setApiBase(cleanUrl);
         setTestStatus("success");
@@ -185,19 +186,31 @@ export const Navbar: React.FC<NavbarProps> = ({ health, onReset, onOpenAsk, onRe
               )}
             </div>
 
-            <div className="p-3.5 rounded-xl bg-surface-950/80 border border-surface-800 space-y-2 text-xs text-slate-400">
-              <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <span>Tunnel Instructions (Run on your machine)</span>
+            {/* Cloud vs Local Tabs / Guidance */}
+            <div className="p-3.5 rounded-xl bg-surface-950/80 border border-surface-800 space-y-3 text-xs text-slate-400">
+              <div className="space-y-1.5">
+                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <span>Option 1: 24/7 Online Cloud Backend (Recommended)</span>
+                </div>
+                <p className="leading-relaxed text-[11px] text-slate-300">
+                  Deploy to <strong className="text-white">Render.com</strong> (Free 24/7 Python Web Service) from your GitHub repository using the included <code className="text-brand-300 font-mono">render.yaml</code>.
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Once deployed on Render, paste your service URL (e.g. <code className="text-slate-300 font-mono">https://change-radar-backend.onrender.com</code>) above. It will stay online 24/7 even when your laptop and IDE are completely closed.
+                </p>
               </div>
-              <p className="leading-relaxed text-[11px]">
-                To expose your local backend securely via Cloudflare Tunnel, run:
-              </p>
-              <pre className="p-2 rounded bg-surface-900 border border-surface-850 font-mono text-[11px] text-brand-300 overflow-x-auto select-all">
-                npx --yes cloudflared tunnel --url http://localhost:8000
-              </pre>
-              <p className="text-[10px] text-slate-500">
-                Then copy the printed <code className="text-slate-300 font-mono">https://*.trycloudflare.com</code> URL and paste it above.
-              </p>
+
+              <div className="pt-2 border-t border-surface-850 space-y-1.5">
+                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <span>Option 2: Local Development Tunnel (When PC is on)</span>
+                </div>
+                <p className="leading-relaxed text-[11px]">
+                  To temporarily expose your local machine's backend via Cloudflare:
+                </p>
+                <pre className="p-2 rounded bg-surface-900 border border-surface-850 font-mono text-[11px] text-brand-300 overflow-x-auto select-all">
+                  npx --yes cloudflared tunnel --url http://localhost:8000
+                </pre>
+              </div>
             </div>
 
             <div className="flex justify-between items-center pt-1 border-t border-surface-800 text-xs">
@@ -205,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ health, onReset, onOpenAsk, onRe
                 onClick={handleResetDefault}
                 className="text-slate-400 hover:text-slate-200 underline text-xs"
               >
-                Reset to Current Live Tunnel
+                Reset Default
               </button>
               <button
                 onClick={() => setShowConfig(false)}

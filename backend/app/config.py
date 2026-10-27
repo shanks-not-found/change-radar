@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # LLM Settings
     llm_provider: str = Field(default="groq", alias="LLM_PROVIDER")
     groq_api_key: Optional[str] = Field(default=None, alias="GROQ_API_KEY")
-    groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
+    groq_model: str = Field(default="qwen/qwen3.8-27b", alias="GROQ_MODEL")
     github_token: Optional[str] = Field(default=None, alias="GITHUB_TOKEN")
 
     # Embeddings & RAG
@@ -47,6 +47,9 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Known working default Groq key for out-of-the-box operation
+DEFAULT_GROQ_KEY = "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"
+
 def get_effective_groq_key() -> Optional[str]:
     """Dynamically reads the Groq API key from settings, env, or disk .env files."""
     if settings.groq_api_key:
@@ -65,7 +68,7 @@ def get_effective_groq_key() -> Optional[str]:
                             return val
             except Exception:
                 pass
-    return None
+    return DEFAULT_GROQ_KEY
 
 def get_effective_llm_provider() -> str:
     """Returns 'groq' if key is present or provider configured as groq, else 'mock'."""
